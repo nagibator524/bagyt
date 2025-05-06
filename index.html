@@ -1,67 +1,631 @@
-<!DOCTYPE html >
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-	<title>NIS BAĞYT</title>
-	<link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta charset="utf-8">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-	<link rel="stylesheet" type="text/css" href="static/css/main.css">
-	
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель администратора - Магазин Одежды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px; /* Увеличено для модального окна отчета */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        h1 { font-size: 1.875rem; } /* text-3xl */
+        h2 { font-size: 1.5rem; } /* text-2xl */
+        h3 { font-size: 1.25rem; } /* text-xl */
+        body, p, label, input, button, td, th, span, a { font-size: 0.875rem; } /* text-sm */
+
+        @media (min-width: 768px) { /* md */
+            h1 { font-size: 2.25rem; } /* md:text-4xl */
+            h2 { font-size: 1.875rem; } /* md:text-3xl */
+            h3 { font-size: 1.5rem; } /* md:text-2xl */
+            body, p, label, input, button, td, th, span, a { font-size: 1rem; } /* md:text-base */
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive thead { display: none; }
+            .table-responsive tr {
+                display: block; margin-bottom: 0.625em; border: 1px solid #ddd;
+                border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .table-responsive td {
+                display: block; text-align: right; padding-left: 50%;
+                position: relative; border-bottom: 1px solid #eee;
+            }
+            .table-responsive td:last-child { border-bottom: 0; }
+            .table-responsive td::before {
+                content: attr(data-label); position: absolute; left: 10px;
+                width: calc(50% - 20px); padding-right: 10px;
+                white-space: nowrap; text-align: left; font-weight: bold;
+            }
+            .modal-content { margin: 10% auto; padding: 15px; max-width: 95%;}
+            .main-navigation button { padding: 0.5rem 0.75rem; font-size: 0.8rem;}
+        }
+        #imagePreview {
+            width: 100px; height: 100px; object-fit: cover;
+            border: 1px solid #ddd; border-radius: 4px; display: none;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+        }
+        .nav-button.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        #salesReportModal .modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        /* Стили для выделения общей прибыли */
+        .total-profit-highlight {
+            background-color: #c7d2fe; /* indigo-200 для акцента */
+            /* order: -1; /* Для перемещения вверх в flex/grid, если потребуется */
+        }
+        .total-profit-highlight p {
+            font-size: 1.875rem; /* text-3xl */
+            line-height: 2.25rem; /* leading-9 */
+        }
+         @media (min-width: 768px) { /* md */
+            .total-profit-highlight p {
+                font-size: 2.25rem; /* md:text-4xl */
+                line-height: 2.5rem; /* md:leading-10 */
+            }
+        }
+    </style>
 </head>
-<body>
-	<script src="https://kit.fontawesome.com/331bab8bdd.js" crossorigin="anonymous"></script>
-	<div class="wrapper">
-		<div class="nav">
-			
-			
-			
-			<nav class="topnav" id="myTopnav">
-				<div class="part1">
-					<a href="/bagyt/index.html">About us</a>
-					<a href="/Movies">Movies</a>
-				</div>
-				<div class="part2">
-					<img src="static/img/v1_3.png" />
-				</div>
-				<div class="part3">
-					<a href="/bagyt/buytickets.html">Buy Tickets</a>
-				</div>
-				
-			</nav>
-			
-		</div>
-		<div class="parent">
-			
-			
-			<div class="child">
-				<div class="daughter">
+<body class="bg-gray-100 text-gray-800">
 
-					<h1>NIS BAĞYT</h1>
-					<p><h2>Школьная предвыборная компания "BAGYT": Путь к Лидерству и Позитивным Переменам</h2>
+    <div class="container mx-auto p-4">
+        <header class="mb-6 text-center">
+            <h1 class="font-bold text-indigo-600">Панель администратора</h1>
+            <p class="text-gray-600">Управление магазином одежды</p>
+        </header>
 
-<li>Школьные предвыборные компании не только приносят волнение в учебные заведения, но и являются платформой для развития лидерских качеств среди студентов. Недавно наша школа стала свидетелем захватывающего события в виде предвыборной компании "BAGYT", что в переводе с казахского означает "Будущее". Эта компания не только привнесла энтузиазм и позитив в наше образовательное учреждение, но и подчеркнула важность лидерства и активного участия в жизни школы.</li>
-<p></p>
-<li>"Bagyt" не просто является акронимом, но и символизирует стремление к будущему, наполненному инновациями и позитивными переменами. Участвуя в этой предвыборной компании, студенты обнаружили в себе лидерские качества, такие как организаторские способности, коммуникабельность и ответственность. Кроме того, "BAGYT" стала площадкой для того, чтобы каждый участник выразил свои идеи и видение будущего школы.</li>
+        <nav class="mb-6 flex justify-center space-x-2 md:space-x-4 main-navigation">
+            <button data-page="productsPage" class="nav-button bg-white hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-4 border border-indigo-500 rounded-lg shadow transition duration-150 ease-in-out active">
+                <i class="fas fa-box-open mr-2"></i>Товары
+            </button>
+            <button data-page="reportsPage" class="nav-button bg-white hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-4 border border-indigo-500 rounded-lg shadow transition duration-150 ease-in-out">
+                <i class="fas fa-file-invoice-dollar mr-2"></i>Отчеты
+            </button>
+            <button data-page="analyticsPage" class="nav-button bg-white hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-4 border border-indigo-500 rounded-lg shadow transition duration-150 ease-in-out">
+                <i class="fas fa-chart-line mr-2"></i>Аналитика
+            </button>
+        </nav>
 
-<li>Одним из ключевых аспектов кампании стал акцент на позитивности. Кандидаты "BAGYT" стремились создать атмосферу взаимопонимания и поддержки, чтобы ученики чувствовали себя частью большой семьи. Это не только способствовало укреплению духа коллектива, но и подчеркнуло важность позитивного влияния на общественную жизнь школы.</li>
+        <div id="productsPage" class="page-section active">
+            <div class="mb-6 text-right">
+                <button id="addProductBtn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    <i class="fas fa-plus mr-2"></i>Добавить товар
+                </button>
+            </div>
+            <div class="mb-6 p-4 bg-white rounded-lg shadow">
+                <h3 class="font-semibold mb-2 text-gray-700">Фильтры</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" id="filterName" placeholder="Поиск по названию..." class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="filterSku" placeholder="Поиск по артикулу..." class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <button id="applyFilterBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Применить</button>
+                </div>
+            </div>
+            <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+                <div class="table-responsive">
+                    <table class="min-w-full leading-normal">
+                        <thead class="bg-gray-200 text-gray-600 uppercase text-xs md:text-sm">
+                            <tr>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Изобр.</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Название</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Артикул</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Себест. (₸)</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Цена (₸)</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Прибыль с ед. (₸)</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Общ. прибыль (остаток) (₸)</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-center">Кол-во</th>
+                                <th class="px-2 py-3 border-b-2 border-gray-300 text-left">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody" class="text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-</p>
-				</div>
-			</div>
+        <div id="reportsPage" class="page-section">
+            <div class="mb-6 text-right">
+                <button id="createSalesReportBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    <i class="fas fa-cash-register mr-2"></i>Зафиксировать продажи
+                </button>
+            </div>
+            <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+                <h3 class="text-xl font-semibold p-4 bg-gray-50 border-b text-indigo-700">История продаж</h3>
+                <div class="table-responsive">
+                    <table class="min-w-full leading-normal">
+                        <thead class="bg-gray-200 text-gray-600 uppercase text-xs md:text-sm">
+                            <tr>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-left">Дата</th>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-left">ID товара</th>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-left">Название</th>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-right">Кол-во продано</th>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-right">Цена продажи (₸)</th>
+                                <th class="px-3 py-3 border-b-2 border-gray-300 text-right">Сумма (₸)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesHistoryTableBody" class="text-gray-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-		<div class="copyright">
-			<p>©2023-2024 NIS BAĞYT</p>
-		</div>			
-			</div>
-		<div class="socialmedia">
-			<button onclick="window.location.href='https://www.instagram.com/nisbagyt/?utm_source=ig_web_button_share_sheet&igshid=OGQ5ZDc2ODk2ZA==';">
-				<i class="fa-brands fa-instagram fa-lg"></i>
-			</button>
-			<button onclick="window.location.href='https://www.tiktok.com/@nis_bagyt?is_from_webapp=1&sender_device=pc';"><i class="fa-brands fa-tiktok fa-lg" ></i></button>
-		</div>
-	</div>
+        <div id="analyticsPage" class="page-section">
+            <div class="p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="font-semibold text-indigo-700 mb-4 text-center">Аналитика Продаж</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-6">
+                    <div class="p-4 rounded-lg shadow total-profit-highlight lg:col-span-2"> <h3 class="font-medium text-indigo-700">Общая прибыль</h3>
+                        <p id="totalProfit" class="font-bold text-indigo-800">0 ₸</p>
+                    </div>
+                    <div class="p-4 bg-green-100 rounded-lg shadow">
+                        <h3 class="font-medium text-green-700">Общая выручка</h3>
+                        <p id="totalRevenue" class="text-xl md:text-2xl font-bold text-green-800">0 ₸</p>
+                    </div>
+                    <div class="p-4 bg-red-100 rounded-lg shadow">
+                        <h3 class="font-medium text-red-700">Общая себестоимость (COGS)</h3>
+                        <p id="totalCost" class="text-xl md:text-2xl font-bold text-red-800">0 ₸</p>
+                    </div>
+                    <div class="p-4 bg-yellow-100 rounded-lg shadow lg:col-start-3"> <h3 class="font-medium text-yellow-700">Продано товаров (шт)</h3>
+                        <p id="totalItemsSold" class="text-xl md:text-2xl font-bold text-yellow-800">0</p>
+                    </div>
+                </div>
+                <div>
+                     <h3 class="font-semibold text-indigo-700 mb-2 text-center">Выручка по категориям</h3>
+                     <div class="chart-container"><canvas id="salesChart" class="bg-white p-2 rounded-lg shadow"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-	
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4"><h2 id="modalTitle" class="font-semibold text-indigo-600">Добавить товар</h2><button id="closeModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button></div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="mb-3"><label for="productName" class="block font-medium text-gray-700 mb-1">Название</label><input type="text" id="productName" name="productName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required></div>
+                <div class="mb-3"><label for="productSku" class="block font-medium text-gray-700 mb-1">Артикул</label><input type="text" id="productSku" name="productSku" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div><label for="productCostPrice" class="block font-medium text-gray-700 mb-1">Себестоимость (₸)</label><input type="number" id="productCostPrice" name="productCostPrice" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required></div>
+                    <div><label for="productPrice" class="block font-medium text-gray-700 mb-1">Цена продажи (₸)</label><input type="number" id="productPrice" name="productPrice" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required></div>
+                </div>
+                <div class="mb-3"><label for="productCategory" class="block font-medium text-gray-700 mb-1">Категория</label><input type="text" id="productCategory" name="productCategory" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Футболки, Джинсы..."></div>
+                <div class="mb-3"><label for="productQuantityModal" class="block font-medium text-gray-700 mb-1">Количество</label><input type="number" id="productQuantityModal" name="productQuantityModal" min="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required></div>
+                <div class="mb-3"><label for="productDescription" class="block font-medium text-gray-700 mb-1">Описание</label><textarea id="productDescription" name="productDescription" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea></div>
+                <div class="mb-4"><label for="productImageFile" class="block font-medium text-gray-700 mb-1">Изображение</label><input type="file" id="productImageFile" name="productImageFile" accept="image/*" class="mt-1 block w-full text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"><img id="imagePreview" src="#" alt="Предпросмотр" class="mt-2"/><input type="hidden" id="productImageUrlHidden"></div>
+                <div class="flex justify-end space-x-3 mt-5"><button type="button" id="cancelModalBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Отмена</button><button type="submit" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Сохранить</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="salesReportModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-indigo-600">Фиксация продаж</h2>
+                <button id="closeSalesReportModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <form id="salesReportForm">
+                <div class="max-h-96 overflow-y-auto mb-4 border rounded-md p-2">
+                    <table class="min-w-full">
+                        <thead class="sticky top-0 bg-gray-100 z-10">
+                            <tr>
+                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Товар</th>
+                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена (₸)</th>
+                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Остаток</th>
+                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Продано шт.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesReportProductsBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelSalesReportBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Отмена</button>
+                    <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Зафиксировать продажи</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md transition-opacity duration-300 opacity-0">Сообщение</div>
+
+    <script>
+        // --- DOM элементы ---
+        const productTableBody = document.getElementById('productTableBody');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const productModal = document.getElementById('productModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const productForm = document.getElementById('productForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const notification = document.getElementById('notification');
+        const filterNameInput = document.getElementById('filterName');
+        const filterSkuInput = document.getElementById('filterSku');
+        const applyFilterBtn = document.getElementById('applyFilterBtn');
+        const productImageFile = document.getElementById('productImageFile');
+        const imagePreview = document.getElementById('imagePreview');
+        const productImageUrlHidden = document.getElementById('productImageUrlHidden');
+
+        const totalRevenueEl = document.getElementById('totalRevenue');
+        const totalCostEl = document.getElementById('totalCost');
+        const totalProfitEl = document.getElementById('totalProfit');
+        const totalItemsSoldEl = document.getElementById('totalItemsSold');
+        const salesChartCanvas = document.getElementById('salesChart');
+        let salesChartInstance = null;
+
+        const productsPage = document.getElementById('productsPage');
+        const analyticsPage = document.getElementById('analyticsPage');
+        const reportsPage = document.getElementById('reportsPage');
+        const navButtons = document.querySelectorAll('.nav-button');
+
+        const createSalesReportBtn = document.getElementById('createSalesReportBtn');
+        const salesReportModal = document.getElementById('salesReportModal');
+        const closeSalesReportModalBtn = document.getElementById('closeSalesReportModalBtn');
+        const cancelSalesReportBtn = document.getElementById('cancelSalesReportBtn');
+        const salesReportForm = document.getElementById('salesReportForm');
+        const salesReportProductsBody = document.getElementById('salesReportProductsBody');
+        const salesHistoryTableBody = document.getElementById('salesHistoryTableBody');
+
+
+        // --- Начальные данные ---
+        let products = [
+            { id: 'p1', name: 'Футболка "Классика"', sku: 'TS001', category: 'Футболки', costPrice: 2000, price: 5000, quantity: 50, description: 'Хлопковая футболка, базовый цвет.', imageUrl: 'https://placehold.co/100x100/E2E8F0/94A3B8?text=Футболка' },
+            { id: 'p2', name: 'Джинсы "Слим"', sku: 'JN005', category: 'Джинсы', costPrice: 7000, price: 12000, quantity: 30, description: 'Узкие джинсы из качественного денима.', imageUrl: 'https://placehold.co/100x100/E2E8F0/94A3B8?text=Джинсы' },
+            { id: 'p3', name: 'Платье "Лето"', sku: 'DR012', category: 'Платья', costPrice: 4500, price: 8500, quantity: 25, description: 'Легкое летнее платье с цветочным принтом.', imageUrl: 'https://placehold.co/100x100/E2E8F0/94A3B8?text=Платье' },
+            { id: 'p4', name: 'Куртка "Бомбер"', sku: 'JK003', category: 'Верхняя одежда', costPrice: 10000, price: 18000, quantity: 15, description: 'Стильная куртка-бомбер.', imageUrl: 'https://placehold.co/100x100/E2E8F0/94A3B8?text=Куртка' }
+        ];
+        let sales = [];
+        let editingProductId = null;
+
+        // --- Навигация ---
+        function switchPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            navButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.page === pageId);
+            });
+            if (pageId === 'analyticsPage') {
+                 calculateAndRenderAnalytics();
+            } else if (pageId === 'reportsPage') {
+                renderSalesHistory();
+            }
+        }
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => switchPage(button.dataset.page));
+        });
+
+        // --- Уведомления ---
+        function showNotification(message, isError = false) {
+            notification.textContent = message;
+            notification.className = 'fixed bottom-5 right-5 py-2 px-4 rounded-lg shadow-md transition-opacity duration-300 opacity-0';
+            notification.classList.add(isError ? 'bg-red-500' : 'bg-green-500', 'text-white');
+            notification.classList.remove('opacity-0');
+            setTimeout(() => notification.classList.add('opacity-0'), 3000);
+        }
+
+        // --- Товары (CRUD) ---
+        function renderProducts(filteredProducts = products) {
+            productTableBody.innerHTML = '';
+            if (filteredProducts.length === 0) {
+                 productTableBody.innerHTML = `<tr><td colspan="9" class="text-center py-10 text-gray-500">Товары не найдены.</td></tr>`;
+                 return;
+            }
+            filteredProducts.forEach(product => {
+                const tr = document.createElement('tr');
+                tr.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100');
+                const profitPerUnit = product.price - product.costPrice;
+                const totalProfitFromStock = profitPerUnit * product.quantity;
+                tr.innerHTML = `
+                    <td data-label="Изобр." class="px-2 py-3 whitespace-nowrap"><img src="${product.imageUrl || 'https://placehold.co/80x80/E2E8F0/94A3B8?text=Нет+фото'}" alt="${product.name}" class="w-12 h-12 md:w-16 md:h-16 object-cover rounded-md shadow-sm" onerror="this.onerror=null;this.src='https://placehold.co/80x80/E2E8F0/94A3B8?text=Ошибка';"></td>
+                    <td data-label="Название" class="px-2 py-3 whitespace-nowrap font-medium">${product.name}</td>
+                    <td data-label="Артикул" class="px-2 py-3 whitespace-nowrap">${product.sku}</td>
+                    <td data-label="Себест." class="px-2 py-3 whitespace-nowrap">${product.costPrice.toLocaleString('ru-RU')} ₸</td>
+                    <td data-label="Цена" class="px-2 py-3 whitespace-nowrap">${product.price.toLocaleString('ru-RU')} ₸</td>
+                    <td data-label="Прибыль с ед." class="px-2 py-3 whitespace-nowrap ${profitPerUnit >= 0 ? 'text-green-600' : 'text-red-600'}">${profitPerUnit.toLocaleString('ru-RU')} ₸</td>
+                    <td data-label="Общ. прибыль (остаток)" class="px-2 py-3 whitespace-nowrap ${totalProfitFromStock >= 0 ? 'text-green-700' : 'text-red-700'} font-semibold">${totalProfitFromStock.toLocaleString('ru-RU')} ₸</td>
+                    <td data-label="Кол-во" class="px-2 py-3 whitespace-nowrap text-center">
+                        <div class="flex items-center justify-center space-x-1 md:space-x-2">
+                            <button data-id="${product.id}" class="quantity-decrease bg-red-100 hover:bg-red-200 text-red-700 font-bold p-1 rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" aria-label="Уменьшить количество"><i class="fas fa-minus text-xs"></i></button>
+                            <span class="font-semibold text-sm md:text-lg">${product.quantity}</span>
+                            <button data-id="${product.id}" class="quantity-increase bg-green-100 hover:bg-green-200 text-green-700 font-bold p-1 rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" aria-label="Увеличить количество"><i class="fas fa-plus text-xs"></i></button>
+                        </div>
+                    </td>
+                    <td data-label="Действия" class="px-2 py-3 whitespace-nowrap">
+                        <button data-id="${product.id}" class="edit-btn text-indigo-600 hover:text-indigo-900 mr-2 md:mr-3 transition" title="Редактировать"><i class="fas fa-edit fa-sm md:fa-lg"></i></button>
+                        <button data-id="${product.id}" class="delete-btn text-red-500 hover:text-red-700 transition" title="Удалить"><i class="fas fa-trash-alt fa-sm md:fa-lg"></i></button>
+                    </td>
+                `;
+                productTableBody.appendChild(tr);
+            });
+        }
+        function openModal(product = null) {
+            productForm.reset();
+            imagePreview.style.display = 'none'; imagePreview.src = '#';
+            productImageUrlHidden.value = '';
+            if (product) {
+                modalTitle.textContent = 'Редактировать товар';
+                document.getElementById('productId').value = product.id;
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productSku').value = product.sku;
+                document.getElementById('productCategory').value = product.category || '';
+                document.getElementById('productCostPrice').value = product.costPrice;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productQuantityModal').value = product.quantity;
+                document.getElementById('productDescription').value = product.description || '';
+                if (product.imageUrl) {
+                    imagePreview.src = product.imageUrl;
+                    imagePreview.style.display = 'block';
+                    productImageUrlHidden.value = product.imageUrl;
+                }
+                editingProductId = product.id;
+            } else {
+                modalTitle.textContent = 'Добавить новый товар';
+                editingProductId = null;
+            }
+            productModal.style.display = 'block';
+        }
+        function closeModal() { productModal.style.display = 'none'; editingProductId = null; }
+
+        productForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(productForm);
+            const imageFile = formData.get('productImageFile');
+            let imageUrl = productImageUrlHidden.value;
+            const productData = {
+                id: editingProductId || 'p' + Date.now(),
+                name: formData.get('productName'), sku: formData.get('productSku'),
+                category: formData.get('productCategory') || 'Без категории',
+                costPrice: parseFloat(formData.get('productCostPrice')), price: parseFloat(formData.get('productPrice')),
+                quantity: parseInt(formData.get('productQuantityModal')), description: formData.get('productDescription'),
+                imageUrl: imageUrl
+            };
+            const handleImageProcessing = (file) => {
+                return new Promise((resolve) => {
+                    if (file && file.size > 0) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    } else { resolve(imageUrl); }
+                });
+            };
+            handleImageProcessing(imageFile).then(processedImageUrl => {
+                productData.imageUrl = processedImageUrl;
+                if (editingProductId) {
+                    const index = products.findIndex(p => p.id === editingProductId);
+                    if (index !== -1) { products[index] = { ...products[index], ...productData }; showNotification('Товар успешно обновлен!'); }
+                } else { products.push(productData); showNotification('Товар успешно добавлен!'); }
+                renderProducts();
+                if (analyticsPage.classList.contains('active')) { calculateAndRenderAnalytics(); }
+                closeModal();
+            });
+        });
+        productImageFile.addEventListener('change', function(event){
+            const file = event.target.files[0];
+            if(file){ const reader = new FileReader(); reader.onload = (e) => { imagePreview.src = e.target.result; imagePreview.style.display = 'block'; }; reader.readAsDataURL(file); }
+            else { imagePreview.style.display = 'none'; imagePreview.src = '#'; }
+        });
+        productTableBody.addEventListener('click', function(event) {
+            const target = event.target.closest('button');
+            if (!target) return;
+            const productId = target.dataset.id;
+            if (target.classList.contains('delete-btn')) {
+                if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+                    products = products.filter(p => p.id !== productId); renderProducts();
+                    if (analyticsPage.classList.contains('active')) { calculateAndRenderAnalytics(); }
+                    showNotification('Товар удален.', true);
+                }
+            } else if (target.classList.contains('edit-btn')) {
+                const productToEdit = products.find(p => p.id === productId); if (productToEdit) openModal(productToEdit);
+            } else if (target.classList.contains('quantity-increase')) {
+                const product = products.find(p => p.id === productId); if (product) { product.quantity++; renderProducts(); showNotification('Количество увеличено.'); }
+            } else if (target.classList.contains('quantity-decrease')) {
+                const product = products.find(p => p.id === productId);
+                if (product && product.quantity > 0) { product.quantity--; renderProducts(); showNotification('Количество уменьшено.'); }
+                else if (product && product.quantity === 0) { showNotification('Количество не может быть меньше нуля.', true); }
+            }
+        });
+        applyFilterBtn.addEventListener('click', () => {
+            const nameFilter = filterNameInput.value.toLowerCase(); const skuFilter = filterSkuInput.value.toLowerCase();
+            const filtered = products.filter(product => product.name.toLowerCase().includes(nameFilter) && product.sku.toLowerCase().includes(skuFilter));
+            renderProducts(filtered);
+        });
+        addProductBtn.addEventListener('click', () => openModal());
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelModalBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => { if (event.target === productModal) closeModal(); });
+
+        // --- Отчеты о продажах ---
+        function openSalesReportModal() {
+            salesReportProductsBody.innerHTML = '';
+            products.forEach(product => {
+                if (product.quantity > 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-2 px-2 border-b border-gray-200">${product.name}</td>
+                        <td class="py-2 px-2 border-b border-gray-200">${product.price.toLocaleString('ru-RU')}</td>
+                        <td class="py-2 px-2 border-b border-gray-200">${product.quantity}</td>
+                        <td class="py-2 px-2 border-b border-gray-200">
+                            <input type="number" name="quantitySold_${product.id}" class="w-20 p-1 border border-gray-300 rounded-md text-sm" min="0" max="${product.quantity}" value="0">
+                        </td>
+                    `;
+                    salesReportProductsBody.appendChild(tr);
+                }
+            });
+            salesReportModal.style.display = 'block';
+        }
+        function closeSalesReportModal() {
+            salesReportModal.style.display = 'none';
+        }
+        createSalesReportBtn.addEventListener('click', openSalesReportModal);
+        closeSalesReportModalBtn.addEventListener('click', closeSalesReportModal);
+        cancelSalesReportBtn.addEventListener('click', closeSalesReportModal);
+        window.addEventListener('click', (event) => { if (event.target === salesReportModal) closeSalesReportModal(); });
+
+        salesReportForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(salesReportForm);
+            const reportDate = new Date().toISOString().split('T')[0];
+            let salesRecorded = false;
+
+            formData.forEach((value, key) => {
+                if (key.startsWith('quantitySold_')) {
+                    const productId = key.split('_')[1];
+                    const quantitySold = parseInt(value);
+
+                    if (quantitySold > 0) {
+                        const productIndex = products.findIndex(p => p.id === productId);
+                        if (productIndex !== -1) {
+                            const product = products[productIndex];
+                            if (product.quantity >= quantitySold) {
+                                sales.push({
+                                    productId: product.id,
+                                    productName: product.name,
+                                    quantitySold: quantitySold,
+                                    salePrice: product.price,
+                                    date: reportDate
+                                });
+                                product.quantity -= quantitySold;
+                                salesRecorded = true;
+                            } else {
+                                showNotification(`Недостаточно товара "${product.name}" на складе (остаток: ${product.quantity}, пытаетесь продать: ${quantitySold}).`, true);
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (salesRecorded) {
+                renderProducts();
+                renderSalesHistory();
+                if (analyticsPage.classList.contains('active')) {
+                    calculateAndRenderAnalytics();
+                }
+                showNotification('Продажи успешно зафиксированы!');
+            } else {
+                showNotification('Не было зафиксировано ни одной продажи.', true);
+            }
+            closeSalesReportModal();
+        });
+
+        function renderSalesHistory() {
+            salesHistoryTableBody.innerHTML = '';
+            if (sales.length === 0) {
+                salesHistoryTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">История продаж пуста.</td></tr>`;
+                return;
+            }
+            const sortedSales = [...sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedSales.forEach(sale => {
+                const tr = document.createElement('tr');
+                tr.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-50');
+                const productSold = products.find(p => p.id === sale.productId);
+                const productName = sale.productName || (productSold ? productSold.name : 'Товар не найден');
+                const totalAmount = sale.quantitySold * sale.salePrice;
+                tr.innerHTML = `
+                    <td data-label="Дата" class="px-3 py-3">${sale.date}</td>
+                    <td data-label="ID товара" class="px-3 py-3">${sale.productId}</td>
+                    <td data-label="Название" class="px-3 py-3">${productName}</td>
+                    <td data-label="Кол-во продано" class="px-3 py-3 text-right">${sale.quantitySold}</td>
+                    <td data-label="Цена продажи" class="px-3 py-3 text-right">${sale.salePrice.toLocaleString('ru-RU')} ₸</td>
+                    <td data-label="Сумма" class="px-3 py-3 text-right font-semibold">${totalAmount.toLocaleString('ru-RU')} ₸</td>
+                `;
+                salesHistoryTableBody.appendChild(tr);
+            });
+        }
+
+
+        // --- Аналитика ---
+        function calculateAndRenderAnalytics() {
+            let totalRevenue = 0;
+            let totalCostOfGoodsSold = 0;
+            let itemsSoldCount = 0;
+            const salesByCategory = {};
+
+            sales.forEach(sale => {
+                const product = products.find(p => p.id === sale.productId);
+                if (product) {
+                    totalRevenue += sale.quantitySold * sale.salePrice;
+                    totalCostOfGoodsSold += sale.quantitySold * product.costPrice;
+                    itemsSoldCount += sale.quantitySold;
+                    const category = product.category || 'Без категории';
+                    salesByCategory[category] = (salesByCategory[category] || 0) + (sale.quantitySold * sale.salePrice);
+                }
+            });
+            const totalProfit = totalRevenue - totalCostOfGoodsSold;
+            totalRevenueEl.textContent = `${totalRevenue.toLocaleString('ru-RU')} ₸`;
+            totalCostEl.textContent = `${totalCostOfGoodsSold.toLocaleString('ru-RU')} ₸`;
+            totalProfitEl.textContent = `${totalProfit.toLocaleString('ru-RU')} ₸`;
+            totalItemsSoldEl.textContent = itemsSoldCount;
+            renderSalesChart(salesByCategory);
+        }
+        function renderSalesChart(salesData) {
+            const categories = Object.keys(salesData);
+            const revenues = Object.values(salesData);
+            if (salesChartInstance) salesChartInstance.destroy();
+            const ctx = salesChartCanvas.getContext('2d');
+            if (!ctx) return;
+            salesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: 'Выручка по категориям', data: revenues,
+                        backgroundColor: ['rgba(255, 99, 132, 0.5)','rgba(54, 162, 235, 0.5)','rgba(255, 206, 86, 0.5)','rgba(75, 192, 192, 0.5)','rgba(153, 102, 255, 0.5)','rgba(255, 159, 64, 0.5)'],
+                        borderColor: ['rgba(255, 99, 132, 1)','rgba(54, 162, 235, 1)','rgba(255, 206, 86, 1)','rgba(75, 192, 192, 1)','rgba(153, 102, 255, 1)','rgba(255, 159, 64, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: (value) => value.toLocaleString('ru-RU') + ' ₸' } } },
+                    plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (context) => `${context.dataset.label || ''}: ${context.parsed.y.toLocaleString('ru-RU')} ₸` } } }
+                }
+            });
+        }
+
+        // --- Инициализация ---
+        switchPage('productsPage');
+        renderProducts();
+        renderSalesHistory();
+    </script>
 </body>
 </html>
